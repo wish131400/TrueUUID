@@ -1,6 +1,7 @@
 package cn.alini.trueuuid.mixin.client;
 
 import cn.alini.trueuuid.net.NetIds;
+import cn.alini.trueuuid.config.TrueuuidConfig;
 import io.netty.buffer.Unpooled;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.User; // official 映射 (mapping)
@@ -54,7 +55,7 @@ public abstract class ClientHandshakeMixin {
                         return false;
                     }
                 })
-                .orTimeout(8, TimeUnit.SECONDS)
+                .orTimeout(Math.max(1000L, TrueuuidConfig.timeoutMs()), TimeUnit.MILLISECONDS)
                 .exceptionally(t -> false)
                 .thenAccept(ok -> trueuuid$sendAuthAck(loginConnection, transactionId, ok));
 
