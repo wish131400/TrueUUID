@@ -165,12 +165,6 @@ auth.recentIpGrace.ttlSeconds = 10
 仅管理员可用，权限等级 4。该指令表示管理员同意玩家继承同名离线 UUID 数据，会先备份再迁移到正版/皮肤站 UUID。
 
 ```toml
-auth.nomojang.enabled = false
-```
-
-开启后会禁用 Mojang 会话校验。通常不建议开启。
-
-```toml
 auth.yggdrasil.apiRootWhitelist = []
 ```
 

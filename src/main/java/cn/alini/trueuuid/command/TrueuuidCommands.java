@@ -28,17 +28,6 @@ public class TrueuuidCommands {
         CommandDispatcher<CommandSourceStack> dispatcher = event.getDispatcher();
         dispatcher.register(Commands.literal("trueuuid")
                 .requires(src -> src.hasPermission(3))
-                .then(Commands.literal("config")
-                        .requires(src -> src.hasPermission(3))
-                        .then(Commands.literal("nomojang")
-                                .then(Commands.literal("status")
-                                        .executes(ctx -> cmdNomojangStatus(ctx.getSource())))
-                                .then(Commands.literal("on")
-                                        .executes(ctx -> cmdNomojangSet(ctx.getSource(), true)))
-                                .then(Commands.literal("off")
-                                        .executes(ctx -> cmdNomojangSet(ctx.getSource(), false)))
-                                .then(Commands.literal("toggle")
-                                        .executes(ctx -> cmdNomojangToggle(ctx.getSource())))))
                 .then(Commands.literal("mojang")
                         .then(Commands.literal("status")
                                 .executes(ctx -> mojangStatus(ctx.getSource()))))
@@ -70,9 +59,6 @@ public class TrueuuidCommands {
             };
 
             Object v;
-            v = getVal.apply("auth.nomojang.enabled", "nomojang.enabled");
-            if (v instanceof Boolean value) TrueuuidConfig.COMMON.nomojangEnabled.set(value);
-
             v = getVal.apply("auth.debug", "debug");
             if (v instanceof Boolean value) TrueuuidConfig.COMMON.debug.set(value);
 
@@ -118,29 +104,6 @@ public class TrueuuidCommands {
             src.sendFailure(Component.literal("[TrueUUID] 重载配置失败: " + ex.getMessage()).withStyle(ChatFormatting.RED));
             return 0;
         }
-    }
-
-    private static int cmdNomojangStatus(CommandSourceStack src) {
-        boolean enabled = TrueuuidConfig.nomojangEnabled();
-        src.sendSuccess(() -> Component.literal("[TrueUUID] NoMojang: " + (enabled ? "已启用" : "已禁用"))
-                .withStyle(enabled ? ChatFormatting.GREEN : ChatFormatting.RED), false);
-        return 1;
-    }
-
-    private static int cmdNomojangSet(CommandSourceStack src, boolean value) {
-        try {
-            TrueuuidConfig.COMMON.nomojangEnabled.set(value);
-            src.sendSuccess(() -> Component.literal("[TrueUUID] NoMojang 已" + (value ? "启用" : "禁用"))
-                    .withStyle(value ? ChatFormatting.GREEN : ChatFormatting.RED), false);
-            return 1;
-        } catch (Throwable t) {
-            src.sendFailure(Component.literal("[TrueUUID] 无法设置 NoMojang: " + t.getMessage()).withStyle(ChatFormatting.RED));
-            return 0;
-        }
-    }
-
-    private static int cmdNomojangToggle(CommandSourceStack src) {
-        return cmdNomojangSet(src, !TrueuuidConfig.nomojangEnabled());
     }
 
     private static int mojangStatus(CommandSourceStack src) {
