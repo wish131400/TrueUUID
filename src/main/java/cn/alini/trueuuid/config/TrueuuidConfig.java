@@ -39,8 +39,6 @@ public final class TrueuuidConfig {
     public static boolean recentIpGraceEnabled() { return COMMON.recentIpGraceEnabled.get(); }
     public static int recentIpGraceTtlSeconds() { return COMMON.recentIpGraceTtlSeconds.get(); }
     public static boolean debug() { return COMMON.debug.get(); }
-    // 新增 nomojang 开关访问器 (Added nomojang switch accessor)
-    public static boolean nomojangEnabled() { return COMMON.nomojangEnabled.get(); }
 
     // authlib-injector / Yggdrasil 皮肤站支持
     @SuppressWarnings("unchecked")
@@ -56,9 +54,6 @@ public final class TrueuuidConfig {
         // 新增 (Added)
         public final ForgeConfigSpec.ConfigValue<String> offlineShortSubtitle;
         public final ForgeConfigSpec.ConfigValue<String> onlineShortSubtitle;
-
-        // 新增 nomojang 配置 (Added nomojang config)
-        public final ForgeConfigSpec.BooleanValue nomojangEnabled;
 
         // authlib-injector / Yggdrasil 皮肤站白名单
         public final ForgeConfigSpec.ConfigValue<List<? extends String>> apiRootWhitelist;
@@ -97,9 +92,6 @@ public final class TrueuuidConfig {
             recentIpGraceTtlSeconds   = b.comment("退出游戏后允许同 IP 容错重连的秒数。默认 10 秒，避免长期误导为皮肤站/正版登录。")
                     .defineInRange("recentIpGrace.ttlSeconds", 10, 1, 60);
             debug = b.comment("启用调试日志输出").define("debug", false);
-            // 新增：跳过 Mojang 会话认证（开启后不再通过 sessionserver 验证） (Added: Skip Mojang session auth (no longer verify via sessionserver when enabled))
-            nomojangEnabled = b.comment("开启后关闭对 Mojang 会话服务的在线校验逻辑；同 IP 且近期有正版成功的名称按正版 UUID 处理，其余直接按离线进入处理。")
-                    .define("nomojang.enabled", false);
 
             apiRootWhitelist = b.comment(
                     "authlib-injector 皮肤站域名白名单。",

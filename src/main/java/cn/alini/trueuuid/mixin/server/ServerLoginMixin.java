@@ -50,50 +50,6 @@ public abstract class ServerLoginMixin {
     private void trueuuid$afterHello(ServerboundHelloPacket pkt, CallbackInfo ci) {
         if (this.server.usesAuthentication() || this.gameProfile == null) return;
 
-        // 若开启 nomojang，则直接使用本地策略，不向客户端发送会话认证包 (If nomojang is enabled, use local policy directly, do not send session auth packet to client)
-        if (TrueuuidConfig.nomojangEnabled()) {
-            String name = this.gameProfile.getName();
-            String ip;
-            if (this.connection.getRemoteAddress() instanceof InetSocketAddress isa) {
-                ip = isa.getAddress().getHostAddress();
-            } else {
-                ip = null;
-            }
-            if (TrueuuidConfig.debug()) {
-                System.out.println("[TrueUUID] nomojang 模式：跳过 Mojang 会话认证, 玩家: " + (name != null ? name : "<unknown>") + ", ip: " + ip);
-            }
-
-            // 尝试同 IP 的近期容错命中 -> 视为正版 (Try recent same IP grace hit -> Treat as premium)
-            if (TrueuuidConfig.recentIpGraceEnabled() && ip != null) {
-                var pOpt = TrueuuidRuntime.IP_GRACE.tryGraceResult(name, ip, TrueuuidConfig.recentIpGraceTtlSeconds());
-                if (pOpt.isPresent()) {
-                    UUID premium = pOpt.get().premiumUuid();
-                    if (premium != null) {
-                        if (TrueuuidConfig.debug()) {
-                            System.out.println("[TrueUUID] nomojang: 找到同IP正版记录，按正版处理, uuid=" + premium);
-                        }
-                        GameProfile newProfile = new GameProfile(premium, name);
-                        this.gameProfile = newProfile;
-                        AuthState.AuthSource source = pOpt.get().source() == AuthState.AuthSource.YGGDRASIL
-                                ? AuthState.AuthSource.YGGDRASIL
-                                : AuthState.AuthSource.MOJANG;
-                        AuthState.markAuthSuccess(this.connection, source, pOpt.get().displayName());
-                        // 记录成功（保持注册表/缓存一致） (Record success (keep registry/cache consistent))
-                        TrueuuidRuntime.NAME_REGISTRY.recordSuccess(name, premium, ip, source, pOpt.get().displayName());
-                        return; // 直接返回，按正版处理完毕 (Return directly, premium processing complete)
-                    }
-                }
-            }
-
-            // 其余情况：直接按离线处理（不阻止进入） (Other cases: Treat as offline directly (do not block entry))
-            if (TrueuuidConfig.debug()) {
-                System.out.println("[TrueUUID] nomojang: 未命中同IP正版记录，按离线方式放行");
-            }
-            // 不发送自定义认证包，保持默认的离线行为 (Do not send custom auth packet, keep default offline behavior)
-            return;
-        }
-
-
         // 清理 ack 处理标志（新握手重新可处理） (Clear ack handled flag (new handshake can be processed again))
         this.trueuuid$ackHandled = false;
 

@@ -165,12 +165,6 @@ Admin-only command, permission level 4. It backs up and removes the duplicate of
 Admin-only command, permission level 4. It approves inheriting the same-name offline UUID data by migrating it to the verified Mojang/Yggdrasil UUID with backups.
 
 ```toml
-auth.nomojang.enabled = false
-```
-
-Disables Mojang session verification when enabled. This is usually not recommended.
-
-```toml
 auth.yggdrasil.apiRootWhitelist = []
 ```
 
