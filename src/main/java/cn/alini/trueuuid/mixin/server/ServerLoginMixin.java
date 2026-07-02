@@ -4,6 +4,7 @@ package cn.alini.trueuuid.mixin.server;
 import cn.alini.trueuuid.config.TrueuuidConfig;
 import cn.alini.trueuuid.net.NetIds;
 import cn.alini.trueuuid.server.*;
+import cn.alini.trueuuid.util.TrueuuidText;
 import com.mojang.authlib.GameProfile;
 import com.mojang.authlib.properties.Property;
 import io.netty.buffer.Unpooled;
@@ -67,7 +68,7 @@ public abstract class ServerLoginMixin {
             offlineData = PlayerDataMigration.findOfflineData(this.server, this.gameProfile.getName());
         }
         if (offlineData != null && this.gameProfile != null && trueuuid$isMigrationPending(this.gameProfile.getName())) {
-            sendDisconnectWithReason(Component.literal("离线玩家数据继承正在完成，请稍后重新进入。"));
+            sendDisconnectWithReason(Component.translatable("trueuuid.disconnect.migration_pending"));
             reset();
             return;
         }
@@ -106,7 +107,7 @@ public abstract class ServerLoginMixin {
         }
 
         if (this.trueuuid$offlineUpgradeOffered) {
-            sendDisconnectWithReason(Component.literal("离线玩家数据继承确认超时，未修改任何玩家数据。请重新进入并确认。"));
+            sendDisconnectWithReason(Component.translatable("trueuuid.disconnect.migration_confirm_timeout"));
             reset();
         } else if (TrueuuidConfig.allowOfflineOnTimeout()) {
             if (TrueuuidConfig.debug()) {
@@ -115,9 +116,10 @@ public abstract class ServerLoginMixin {
             AuthState.markOfflineFallback(this.connection, AuthState.FallbackReason.TIMEOUT);
             reset();
         } else {
-            String msg = TrueuuidConfig.timeoutKickMessage();
-            Component reason = Component.literal(msg != null ? msg : "登录超时，未完成账号校验");
-            sendDisconnectWithReason(reason);
+            sendDisconnectWithReason(TrueuuidText.configComponent(
+                    TrueuuidConfig.timeoutKickMessage(),
+                    "trueuuid.disconnect.timeout"
+            ));
             reset();
             ci.cancel();
         }
@@ -337,7 +339,7 @@ public abstract class ServerLoginMixin {
                     System.out.println("[TrueUUID] 使用近期同 IP 容错按正版 UUID 放行, 玩家: " + name + ", ip: " + ip + ", uuid: " + premium);
                     this.gameProfile = new GameProfile(premium, name);
                     AuthState.AuthSource cachedSource = d.graceSource != null ? d.graceSource : AuthState.AuthSource.MOJANG;
-                    String cachedName = d.graceDisplayName != null ? d.graceDisplayName : "近期同IP容错";
+                    String cachedName = d.graceDisplayName != null ? d.graceDisplayName : "Recent same-IP grace";
                     AuthState.markAuthSuccess(this.connection, premium, name, cachedSource, cachedName);
                 } else {
                     System.out.println("[TrueUUID] 容错未找到正版 UUID，改为离线兜底, 玩家: " + name + ", ip: " + ip);
@@ -352,13 +354,14 @@ public abstract class ServerLoginMixin {
                 AuthState.markOfflineFallback(this.connection, AuthState.FallbackReason.FAILURE);
             }
             case DENY -> {
-                String msg = d.denyMessage != null ? d.denyMessage
-                        : "鉴权失败，已禁止离线进入以保护你的正版存档。请稍后重试。";
+                Component msg = d.denyComponent != null ? d.denyComponent
+                        : d.denyMessage != null ? Component.literal(d.denyMessage)
+                        : Component.translatable("trueuuid.disconnect.auth_denied");
                 System.out.println("[TrueUUID] 认证被拒绝, 玩家: " + name + ", ip: " + ip + ", 原因: " + why + ", 消息: " + msg);
                 if (TrueuuidConfig.debug()) {
                     System.out.println("[TrueUUID] 认证被拒绝, 玩家: " + name + ", ip: " + ip + ", 消息: " + msg);
                 }
-                sendDisconnectWithReason(Component.literal(msg));
+                sendDisconnectWithReason(msg);
             }
         }
     }
@@ -381,7 +384,7 @@ public abstract class ServerLoginMixin {
                 return host;
             }
         } catch (Throwable ignored) {}
-        return "Yggdrasil 皮肤站";
+        return "Yggdrasil skin site";
     }
 
     @Unique
@@ -429,18 +432,16 @@ public abstract class ServerLoginMixin {
         if (data == null) {
             return true;
         }
-        String sourceName = source == AuthState.AuthSource.YGGDRASIL
-                ? (displayName == null || displayName.isBlank() ? "皮肤站登录" : "皮肤站登录(" + displayName + ")")
-                : "正版验证";
+        Component sourceName = source == AuthState.AuthSource.YGGDRASIL
+                ? Component.translatable("trueuuid.auth_source.skin_site.with_name", displayName == null || displayName.isBlank() ? "Yggdrasil" : displayName)
+                : Component.translatable("trueuuid.auth_source.premium");
         if (!confirmed) {
-            sendDisconnectWithReason(Component.literal(
-                    "检测到重复 UUID 玩家数据。\n\n"
-                            + "当前登录方式: " + sourceName + "\n"
-                            + "离线 UUID: " + data.offlineUuid() + "\n"
-                            + "当前 UUID: " + verifiedUuid + "\n\n"
-                            + "当你看到此消息时，说明该名称同时存在正版/皮肤站 UUID 和离线 UUID 数据。\n"
-                            + "如果需要继承离线数据，请联系管理员使用 /trueuuid migrateuuid " + name + "。\n"
-                            + "如果离线数据只是重复旧数据，请使用 /trueuuid cleanupuuid " + name + " 清理。"
+            sendDisconnectWithReason(Component.translatable(
+                    "trueuuid.disconnect.duplicate_uuid",
+                    sourceName,
+                    data.offlineUuid(),
+                    verifiedUuid,
+                    name
             ));
             return false;
         }
@@ -454,12 +455,12 @@ public abstract class ServerLoginMixin {
         } catch (Exception ex) {
             System.out.println("[TrueUUID] 离线玩家数据继承失败, player=" + name + ", offlineUuid=" + data.offlineUuid()
                     + ", verifiedUuid=" + verifiedUuid + ", error=" + ex);
-            sendDisconnectWithReason(Component.literal(
-                    "离线玩家数据继承失败，已取消进入以避免数据错乱。\n\n"
-                            + "玩家: " + name + "\n"
-                            + "离线 UUID: " + data.offlineUuid() + "\n"
-                            + "当前 UUID: " + verifiedUuid + "\n\n"
-                            + "原因: " + ex.getMessage()
+            sendDisconnectWithReason(Component.translatable(
+                    "trueuuid.disconnect.migration_failed",
+                    name,
+                    data.offlineUuid(),
+                    verifiedUuid,
+                    ex.getMessage()
             ));
             return false;
         }

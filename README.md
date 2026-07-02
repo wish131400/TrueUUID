@@ -20,6 +20,7 @@ online-mode=false
 - Signed skin texture injection during login.
 - Player info refresh after joining, helping skins update correctly.
 - Clear join feedback for premium, skin-site, and offline fallback states.
+- Localized UI text through Minecraft language files, so each client sees messages in its selected language.
 - Offline-to-verified player data migration with confirmation and backups.
 - Protection against known verified players rejoining with the same name in offline mode.
 
@@ -151,6 +152,14 @@ auth.recentIpGrace.ttlSeconds = 10
 ```
 
 Allows a short same-IP reconnect grace period after a verified player disconnects. This grace is not used when the client explicitly rejects authentication or logs in as offline.
+
+```toml
+auth.showJoinFeedback = true
+```
+
+Show join feedback Title/chat messages for premium, skin-site, offline fallback, and single-player states. Set to `false` to silence those messages without changing authentication or skin refresh behavior.
+
+Default feedback and disconnect messages are sent as Minecraft translation keys and rendered by the player's client language files (`en_us` / `zh_cn`). If you previously generated a config with custom bilingual strings, change those message values back to `trueuuid.*` keys or regenerate the config to use client-side localization.
 
 ```text
 /trueuuid cleanupuuid <name>
